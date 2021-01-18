@@ -12,32 +12,34 @@ class PDF:
 
 
     def split_pdf_each(self): 
-        try:
-            pdf_input = PdfFileReader(open(self.infn[0], 'rb')) 
-            pages = pdf_input.getNumPages()  
-            self.message = '正在拆分...'
-            for i in range(pages): 
-                pdf_output = PdfFileWriter()
-                pdf_output.addPage(pdf_input.getPage(i)) 
-                pdf_output.write(open(self.infn[0][:-4] + '-' + str(i + 1) + '.pdf', 'wb')) 
-                self.message = '已拆分%.2f' %((i + 1)/pages * 100) + '%'
-            self.message = '拆分完成'
-        except:
-            self.message = '出错了，请检查输入格式是否正确'
+        for infn in self.infn:
+            try:
+                pdf_input = PdfFileReader(open(infn, 'rb')) 
+                pages = pdf_input.getNumPages()  
+                self.message = '正在拆分...'
+                for i in range(pages): 
+                    pdf_output = PdfFileWriter()
+                    pdf_output.addPage(pdf_input.getPage(i)) 
+                    pdf_output.write(open(infn[:-4] + '-' + str(i + 1) + '.pdf', 'wb')) 
+                    self.message = '已拆分%.2f' %((i + 1)/pages * 100) + '%'
+                self.message = '拆分完成'
+            except:
+                self.message = '出错了，请检查输入格式是否正确'
 
     def split_pdf_parts(self): 
-        try:
-            pdf_input = PdfFileReader(open(self.infn[0], 'rb'))
-            self.message = '正在拆分...'
-            for part in self.params:
-                pdf_output = PdfFileWriter()
-                for i in range(part[0] - 1, part[1]):
-                    pdf_output.addPage(pdf_input.getPage(i));
-                pdf_output.write(open(self.infn[0][:-4] + '-' + str(part[0]) + '-' + str(part[1]) + '.pdf', 'wb'))
-                self.message = '第%d部分已拆分'%(self.params.index(part) + 1)
-            self.message = '拆分完成'
-        except:
-            self.message = '出错了，请检查输入格式是否正确'
+        for infn in self.infn:
+            try:
+                pdf_input = PdfFileReader(open(infn, 'rb'))
+                self.message = '正在拆分...'
+                for part in self.params:
+                    pdf_output = PdfFileWriter()
+                    for i in range(part[0] - 1, part[1]):
+                        pdf_output.addPage(pdf_input.getPage(i));
+                    pdf_output.write(open(infn[:-4] + '-' + str(part[0]) + '-' + str(part[1]) + '.pdf', 'wb'))
+                    self.message = '第%d部分已拆分'%(self.params.index(part) + 1)
+                self.message = '拆分完成'
+            except:
+                self.message = '出错了，请检查输入格式是否正确'
 
     def merge_pdf(self): 
         try:
@@ -96,11 +98,11 @@ class PDF:
             self.message = '出错了，请检查输入格式是否正确(旋转角度为90的倍数)'
 
     def add_watermark(self):
-        try:
-            self.message = '正在添加页码'
-            water_pdf = PdfFileReader(open('page-number.pdf', 'rb'));
-            water_pages = water_pdf.getNumPages()
-            for infn in self.infn:
+        self.message = '正在添加页码'
+        water_pdf = PdfFileReader(open('page-number.pdf', 'rb'));
+        water_pages = water_pdf.getNumPages()
+        for infn in self.infn:
+            try:
                 pdf_input = PdfFileReader(open(infn, 'rb'));
                 pages = min(pdf_input.getNumPages(), water_pages);
                 pdf_output = PdfFileWriter();
@@ -111,6 +113,7 @@ class PDF:
                     pdf_output.addPage(page);
                     self.message = str(i) + '/' + str(pages) + ': ' + infn
                 pdf_output.write(open(infn[:-4] + '-number2.pdf', 'wb'));
-            self.message = '页码添加完成'
-        except:
-            self.message = '出错了，请检查输入格式是否正确(page-number.pdf文件要求和程序在同一目录)'
+                self.message = '页码添加完成'
+            except: 
+                self.message = '出错了，请检查输入格式是否正确(page-number.pdf文件要求和程序在同一目录)'
+
