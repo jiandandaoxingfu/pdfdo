@@ -1,119 +1,98 @@
-from PyPDF2 import PdfFileReader, PdfFileWriter
-import sys
+import wx, time
+from PDF import PDF
+from threading import Thread
 
-class PDF: 
-    def __init__(self):
-        self.infn = []
-        self.params = ''
-        self.message = ''
+# Next, create an application object.
+app = wx.App()
 
-    def pdf_info(self):
-        return [ 'ID:%d, 页数:%d, 宽×高:%d×%d  ' % (i+1, p.getNumPages(), p.getPage(0).mediaBox.upperRight[0], p.getPage(0).mediaBox.upperRight[1]) for i, p in enumerate( [ PdfFileReader( open(p, 'rb') ) for p in self.infn ] ) ]
+# Then a frame.
+frm = wx.Frame(None, title="pdf处理器", pos = (600, 300), size = (500, 400));
 
+fn = ''
+path = ''
+def select_files():
+	if fileDialog.ShowModal() == wx.ID_OK:
+		global fn, path
+		path = fileDialog.GetDirectory()
+		fn = [path + '\\' + f for f in fileDialog.GetFilenames()]
+		wx.FindWindowById(0).SetValue(str(fn))
+		pdfdo.infn = fn
+		message.SetValue(str(pdfdo.pdf_info()))
 
-    def split_pdf_each(self): 
-        for infn in self.infn:
-            try:
-                pdf_input = PdfFileReader(open(infn, 'rb')) 
-                pages = pdf_input.getNumPages()  
-                self.message = '正在拆分...'
-                for i in range(pages): 
-                    pdf_output = PdfFileWriter()
-                    pdf_output.addPage(pdf_input.getPage(i)) 
-                    pdf_output.write(open(infn[:-4] + '-' + str(i + 1) + '.pdf', 'wb')) 
-                    self.message = '已拆分%.2f' %((i + 1)/pages * 100) + '%'
-                self.message = '拆分完成'
-            except:
-                self.message = '出错了，请检查输入格式是否正确'
+# component
 
-    def split_pdf_parts(self): 
-        for infn in self.infn:
-            try:
-                pdf_input = PdfFileReader(open(infn, 'rb'))
-                self.message = '正在拆分...'
-                for part in self.params:
-                    pdf_output = PdfFileWriter()
-                    for i in range(part[0] - 1, part[1]):
-                        pdf_output.addPage(pdf_input.getPage(i));
-                    pdf_output.write(open(infn[:-4] + '-' + str(part[0]) + '-' + str(part[1]) + '.pdf', 'wb'))
-                    self.message = '第%d部分已拆分'%(self.params.index(part) + 1)
-                self.message = '拆分完成'
-            except:
-                self.message = '出错了，请检查输入格式是否正确'
+def btn_callback(event):
+	id_ = event.GetId()
 
-    def merge_pdf(self): 
-        try:
-            pdf_output = PdfFileWriter() 
-            self.message = '正在合并...'
-            for infn in self.infn:
-                self.message = infn
-                pdf_input = PdfFileReader(open(infn, 'rb')) 
-                pages = pdf_input.getNumPages() 
-                for i in range(pages): 
-                    self.message = str(i) + '/' + str(pages) + ': ' + infn
-                    pdf_output.addPage(pdf_input.getPage(i)) 
-            pdf_output.write(open(self.params, 'wb')) 
-            self.message = '合并完成'
-        except:
-            self.message = '出错了，请检查输入格式是否正确'
+	if id_ == 1:
+		select_files()
+		return
 
-    def cut_pdf(self):
-        try:
-            left, right, lower, upper, option, isTest = self.params;
-            self.message = '正在剪切'
-            pdf_input = PdfFileReader(open(self.infn[0], 'rb'));
-            pdf_output = PdfFileWriter();
-            pages = pdf_input.getNumPages()
-            if isTest == 1:
-                pages = min(10 * isTest, pages)
-            for i in range(pages):
-                page = pdf_input.getPage(i);
-                if (option == 'all') or (option == 'odd' and i%2 == 0) or (option == 'even' and (i+1)%2 == 0):
-                    page.mediaBox.upperLeft = (left, page.mediaBox.upperLeft[1] - upper)
-                    page.mediaBox.upperRight = (page.mediaBox.upperRight[0] - right, page.mediaBox.upperRight[1] - upper)
-                    page.mediaBox.lowerLeft = (left, lower)
-                    page.mediaBox.lowerRight = (page.mediaBox.lowerRight[0] - right, lower)
-                pdf_output.addPage(page);
-                self.message = str(i) + '/' + str(pages)
-            pdf_output.write(open(self.infn[0][:-4] + '-cut.pdf', 'wb'));
-            self.message = '剪切完成'
-        except:
-            self.message = '出错了，请检查输入格式是否正确'
+	if fn == '':
+		return
 
-    def rotate_pdf(self):
-        try:
-            rotation, isTest = self.params
-            self.message = '正在旋转'
-            pdf_input = PdfFileReader(open(self.infn[0], 'rb'));
-            pdf_output = PdfFileWriter();
-            pages = isTest or pdf_input.getNumPages();
-            for i in range(pages):
-                page = pdf_input.getPage(i);
-                page.rotateClockwise(rotation);
-                pdf_output.addPage(page);
-                self.message = str(i) + '/' + str(pages)
-            pdf_output.write(open(self.infn[0][:-4] + '-rotate.pdf', 'wb'));
-            self.message = '完成旋转'
-        except:
-            self.message = '出错了，请检查输入格式是否正确(旋转角度为90的倍数)'
+	pdfdo.message = ''
+	param_ = wx.FindWindowById(id_ - 1).GetValue()
+	param = []
+	if (id_ != 3) & (id_ != 7) & (id_ != 13):
+		try:
+			param = eval(param_)
+		except:
+			message.SetValue('输入格式有误')
+			return
 
-    def add_watermark(self):
-        self.message = '正在添加页码'
-        water_pdf = PdfFileReader(open('page-number.pdf', 'rb'));
-        water_pages = water_pdf.getNumPages()
-        for infn in self.infn:
-            try:
-                pdf_input = PdfFileReader(open(infn, 'rb'));
-                pages = min(pdf_input.getNumPages(), water_pages);
-                pdf_output = PdfFileWriter();
-                for i in range(pages):
-                    page = pdf_input.getPage(i);
-                    water_page = water_pdf.getPage(i);
-                    page.mergePage(water_page);
-                    pdf_output.addPage(page);
-                    self.message = str(i) + '/' + str(pages) + ': ' + infn
-                pdf_output.write(open(infn[:-4] + '-number2.pdf', 'wb'));
-                self.message = '页码添加完成'
-            except: 
-                self.message = '出错了，请检查输入格式是否正确(page-number.pdf文件要求和程序在同一目录)'
+	Thread(target = update_state).start()	
 
+	pdfdo.params = param;
+
+	if id_ == 3:
+		Thread(target = pdfdo.split_pdf_each).start()
+	elif id_ == 5:
+		Thread(target = pdfdo.split_pdf_parts).start()
+	elif id_ == 7:
+		pdfdo.params = path + '\\' + param_
+		Thread(target = pdfdo.merge_pdf).start()
+	elif id_ == 9:
+		Thread(target = pdfdo.cut_pdf).start()
+	elif id_ == 11:
+		Thread(target = pdfdo.rotate_pdf).start()
+	elif id_ == 13:
+		Thread(target = pdfdo.add_watermark).start()
+	elif id_ == 15:
+		Thread(target = pdfdo.convert_pdf2_image).start()
+	
+
+def update_state():
+	message.SetValue(pdfdo.message)
+	if ('完成' not in pdfdo.message) & ('出错了' not in pdfdo.message):
+		time.sleep(1)
+		update_state()
+	else:
+		message.SetValue(pdfdo.message)
+
+# select file
+fileDialog = wx.FileDialog(frm, message = '选择文件', wildcard = '*.pdf', style = wx.FD_OPEN | wx.FD_MULTIPLE, pos = (200, 30), size = (100, 25))
+
+# input/button: pos = (left, top), size = (width, height).
+# varibles.
+left = 15;
+width = 390;
+top = 20;
+margin = 36;
+labels = ['选择文件', '拆分每页', '部分拆分', '文件合并', '文件剪切', '文件旋转', '添加页码', '转为图片'];
+default_values = ['', '支持多个文件', '支持多个文件， 如：[(1,3),(20,25),(30,40)]', '合并后文件名.pdf', '支持单个文件，如：[10,20,10,20,"even",1] (注：左, 右, 下, 上, odd/even/all, 0/1: 0为全部, 1为测试10张)', '支持单个文件，如：[90,1] (注：旋转度数是90的整数倍, 0/1: 1为测试一张, 0为全部)', '支持多个文件', '支持多个文件： 如[5,"png"], 数值越大，图片越清晰，转换也越慢']
+length = len(labels)
+
+for i in range(length):
+	wx.TextCtrl(frm, id = 2 * i, value = default_values[i], pos = (left, top + margin * i), size = (width, 25));
+	wx.Button(frm, id = 2 * i + 1, label = labels[i], pos = (width + 20, top + margin * i), size = (60, 25)).Bind(wx.EVT_BUTTON, btn_callback);
+
+message = wx.TextCtrl(frm, value = "状态框", pos = (left, top + margin * length + 5), size = (455, 25))
+
+pdfdo = PDF()
+
+# Show it.
+frm.Show()
+
+# Start the event loop.
+app.MainLoop()
