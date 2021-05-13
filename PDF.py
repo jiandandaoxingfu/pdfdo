@@ -60,7 +60,7 @@ class PDF:
                     pdf_output.addPage(pdf_input.getPage(i)) 
                     self.message = pdf_name + ':  ' + str(i) + '/' + str(pages)
             pdf_output.write(open(self.params, 'wb')) 
-            self.message = '合并完成'
+            self.message = '合并完成，合并文件位于第一个文件所在地'
         except:
             self.message = '出错了，请检查输入格式是否正确'
 

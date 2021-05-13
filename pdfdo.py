@@ -13,9 +13,9 @@ path = ''
 def select_files():
 	if fileDialog.ShowModal() == wx.ID_OK:
 		global fn, path
+		wx.FindWindowById(0).SetValue(str(fileDialog.GetFilenames()))
 		path = fileDialog.GetDirectory()
 		fn = [path + '\\' + f for f in fileDialog.GetFilenames()]
-		wx.FindWindowById(0).SetValue(str(fn))
 		pdfdo.infn = fn
 		message.SetValue(str(pdfdo.pdf_info()))
 
@@ -80,7 +80,7 @@ width = 390;
 top = 20;
 margin = 36;
 labels = ['选择文件', '拆分每页', '部分拆分', '文件合并', '文件剪切', '文件旋转', '添加页码', '转为图片'];
-default_values = ['', '支持多个文件', '支持多个文件， 如：[(1,3),(20,25),(30,40)]', '合并后文件名.pdf', '支持单个文件，如：[10,20,10,20,"even",1] (注：左, 右, 下, 上, odd/even/all, 0/1: 0为全部, 1为测试10张)', '支持单个文件，如：[90,1] (注：旋转度数是90的整数倍, 0/1: 1为测试一张, 0为全部)', '支持多个文件', '支持多个文件： 如[5,"png"], 数值越大，图片越清晰，转换也越慢']
+default_values = ['支持拖入文件', '支持多个文件', '支持多个文件， 如：[(1,3),(20,25),(30,40)]', '合并后文件名.pdf', '支持单个文件，如：[10,20,10,20,"even",1] (注：左, 右, 下, 上, odd/even/all, 0/1: 0为全部, 1为测试10张)', '支持单个文件，如：[90,1] (注：旋转度数是90的整数倍, 0/1: 1为测试一张, 0为全部)', '支持多个文件', '支持多个文件： 如[5,"png"], 数值越大，图片越清晰，转换也越慢']
 length = len(labels)
 
 for i in range(length):
@@ -88,6 +88,28 @@ for i in range(length):
 	wx.Button(frm, id = 2 * i + 1, label = labels[i], pos = (width + 20, top + margin * i), size = (60, 25)).Bind(wx.EVT_BUTTON, btn_callback);
 
 message = wx.TextCtrl(frm, value = "状态框", pos = (left, top + margin * length + 5), size = (455, 25))
+
+# drop
+class FileDrop(wx.FileDropTarget):
+
+	def __init__(self, window):
+		wx.FileDropTarget.__init__(self)
+		self.window = window
+		
+	def OnDropFiles(self, x, y, filenames):
+		global fn, path
+		fn = [f.replace('\\', '\\\\') for f in filenames]
+		pdfdo.infn += fn
+		length = len(pdfdo.infn[0].split('\\')[-1])
+		path = pdfdo.infn[0][0:-length-2]
+		print(path)
+		message.SetValue(str(pdfdo.pdf_info()))
+		fn_ = [f.split("\\")[-1] for f in pdfdo.infn]
+		wx.FindWindowById(0).SetValue(str(fn_));
+		return True
+
+drop2 = FileDrop(wx.FindWindowById(0));
+wx.FindWindowById(0).SetDropTarget(drop2);
 
 pdfdo = PDF()
 
