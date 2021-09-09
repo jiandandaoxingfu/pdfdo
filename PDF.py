@@ -28,9 +28,9 @@ class PDF:
                     pdf_output.addPage(pdf_input.getPage(i)) 
                     pdf_output.write(open(dir_ + pdf_name[:-4] + '-' + str(i + 1) + '.pdf', 'wb')) 
                     self.message = pdf_name + ':  ' + str(i) + '/' + str(pages)
+                self.message = '完成'
             except:
-                self.message = '出错了，请检查输入格式是否正确'
-        self.message = '完成'
+                self.message = '出错: 如输入格式无误, 则不支持此文件'
 
     def split_pdf_parts(self): 
         for infn in self.infn:
@@ -43,9 +43,9 @@ class PDF:
                         pdf_output.addPage(pdf_input.getPage(i));
                     pdf_output.write(open(infn[:-4] + '-' + str(part[0]) + '-' + str(part[1]) + '.pdf', 'wb'))
                     self.message = '第%d部分已拆分'%(self.params.index(part) + 1)
+                self.message = '完成'
             except:
-                self.message = '出错了，请检查输入格式是否正确'
-        self.message = '完成'
+                self.message = '出错: 如输入格式无误, 则不支持此文件'
 
     def merge_pdf(self): 
         try:
@@ -62,7 +62,7 @@ class PDF:
             pdf_output.write(open(self.params, 'wb')) 
             self.message = '合并完成，合并文件位于第一个文件所在地'
         except:
-            self.message = '出错了，请检查输入格式是否正确'
+            self.message = '出错: 如输入格式无误, 则不支持此文件'
 
     def cut_pdf(self):
         try:
@@ -86,7 +86,7 @@ class PDF:
             pdf_output.write(open(self.infn[0][:-4] + '-cut.pdf', 'wb'));
             self.message = '剪切完成'
         except:
-            self.message = '出错了，请检查输入格式是否正确'
+            self.message = '出错: 如输入格式无误, 则不支持此文件'
 
     def rotate_pdf(self):
         try:
@@ -123,9 +123,9 @@ class PDF:
                     pdf_output.addPage(page);
                     self.message = pdf_name + ':  ' + str(i) + '/' + str(pages)
                 pdf_output.write(open(infn[:-4] + '-number2.pdf', 'wb'));
+                self.message = '完成';
             except: 
                 self.message = '出错了，请检查输入格式是否正确(page-number.pdf文件要求和程序在同一目录)'
-        self.message = '完成';
 
     def convert_pdf2_image(self):
         self.message = '正在转换，所需时间较长，请稍等'
@@ -144,6 +144,6 @@ class PDF:
                     pm = page.getPixmap(matrix=trans, alpha=False)
                     pm.writePNG( dir_ + pdf_name + '-' + str(pg) + '.' + type_ ) 
                     self.message = pdf_name + ':  ' + str(pg + 1) + '/' + str(doc.pageCount) ;
+                self.message = '完成';
             except:
-                self.message = '出错了，请检查输入格式是否正确'
-        self.message = '完成';
+                self.message = '出错: 如输入格式无误, 则不支持此文件'
