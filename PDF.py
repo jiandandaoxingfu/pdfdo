@@ -1,7 +1,8 @@
 from PyPDF2 import PdfFileReader, PdfFileWriter
 import sys
 import os
-import fitz
+from pdf2image import convert_from_path
+import shutil
 
 class PDF: 
     def __init__(self):
@@ -16,17 +17,17 @@ class PDF:
     def split_pdf_each(self): 
         for infn in self.infn:
             try:
-                pdf_name = infn.split('\\')[-1];
-                dir_ = infn.replace(pdf_name, pdf_name[:-4] + '\\')
-                if not os.path.exists(dir_):
-                    os.mkdir(dir_)
+                (dir_, pdf_name) = os.path.split(infn)
                 pdf_input = PdfFileReader(open(infn, 'rb')) 
                 pages = pdf_input.getNumPages()  
                 self.message = '正在拆分...'
                 for i in range(pages): 
                     pdf_output = PdfFileWriter()
                     pdf_output.addPage(pdf_input.getPage(i)) 
-                    pdf_output.write(open(dir_ + pdf_name[:-4] + '-' + str(i + 1) + '.pdf', 'wb')) 
+                    path = dir_ + '/' + pdf_name[:-4] + '单页拆分'
+                    if not os.path.exists(path):
+                        os.mkdir(path)
+                    pdf_output.write(open(path + '/' + pdf_name[:-4] + '-' + str(i + 1) + '.pdf', 'wb')) 
                     self.message = pdf_name + ':  ' + str(i) + '/' + str(pages)
                 self.message = '完成'
             except:
@@ -35,13 +36,17 @@ class PDF:
     def split_pdf_parts(self): 
         for infn in self.infn:
             try:
+                (dir_, pdf_name) = os.path.split(infn)
                 pdf_input = PdfFileReader(open(infn, 'rb'))
                 self.message = '正在拆分...'
                 for part in self.params:
                     pdf_output = PdfFileWriter()
                     for i in range(part[0] - 1, part[1]):
                         pdf_output.addPage(pdf_input.getPage(i));
-                    pdf_output.write(open(infn[:-4] + '-' + str(part[0]) + '-' + str(part[1]) + '.pdf', 'wb'))
+                    path = dir_ + '/' + pdf_name[:-4] + '部分拆分'
+                    if not os.path.exists(path):
+                        os.mkdir(path)
+                    pdf_output.write(open(path + '/' + pdf_name[:-4] + '-' + str(part[0]) + '-' + str(part[1]) + '.pdf', 'wb'))
                     self.message = '第%d部分已拆分'%(self.params.index(part) + 1)
                 self.message = '完成'
             except:
@@ -127,23 +132,28 @@ class PDF:
             except: 
                 self.message = '出错了，请检查输入格式是否正确(page-number.pdf文件要求和程序在同一目录)'
 
-    def convert_pdf2_image(self):
+    def pdf2image(self):
         self.message = '正在转换，所需时间较长，请稍等'
-        zoom, type_ = self.params
         for infn in self.infn:
             try:
-                pdf_name = infn.split('\\')[-1];
-                dir_ = infn.replace(pdf_name, pdf_name[:-4] + '\\')
-                if not os.path.exists(dir_):
-                    os.mkdir(dir_)
-                doc = fitz.open(infn)
-                for pg in range(doc.pageCount):
-                    page = doc[pg]
-                    rotate = int(0)
-                    trans = fitz.Matrix(zoom, zoom).preRotate(rotate)
-                    pm = page.getPixmap(matrix=trans, alpha=False)
-                    pm.writePNG( dir_ + pdf_name + '-' + str(pg) + '.' + type_ ) 
-                    self.message = pdf_name + ':  ' + str(pg + 1) + '/' + str(doc.pageCount) ;
+                (dir_, pdf_name) = os.path.split(infn)
+                path = dir_ + '/' + pdf_name[:-4] + '-images/'
+                if os.path.exists(path):
+                    shutil.rmtree(path)
+                os.mkdir(path)
+                convert_from_path(infn, dpi=self.params, output_folder=path, fmt='png', thread_count=4)
+                num = len(str(len(os.listdir(path))))
+                for fn in os.listdir(path):
+                    os.rename(path + fn, path + pdf_name[:-4] + fn[-(5 + num):])
+
                 self.message = '完成';
             except:
                 self.message = '出错: 如输入格式无误, 则不支持此文件'
+
+
+if __name__=='__main__':
+    pdf = PDF()
+    pdf.infn = ['E:/github/pdfdo/page-number.pdf']
+    pdf.params = 100
+    pdf.pdf2image()
+    print(pdf.message)

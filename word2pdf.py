@@ -14,12 +14,19 @@ class Word2PDF:
     def run(self):
         valueList = []
         try:
-            gencache.EnsureModule('{00020905-0000-0000-C000-000000000046}', 0, 8, 4)
-            # 开始转换
-            w = Dispatch("Word.Application")
-            for fullfilename in self.infn:
-                (filepath, filename) = os.path.split(fullfilename)  # 分割文件路径和文件名
-                softfilename = os.path.splitext(filename)  # 分割文件名和扩展名
+            self.message = '开始转换, 请稍后'
+
+            try:
+                gencache.EnsureModule('{00020905-0000-0000-C000-000000000046}', 0, 8, 4)
+                w = Dispatch("Word.Application")
+            except:
+                self.message = '电脑上可能没有安装Office, 无法使用'
+                return
+
+            for i in range(len(self.infn)):
+                filename = self.infn[i]
+                (filepath, filename) = os.path.split(filename)  
+                softfilename = os.path.splitext(filename) 
                 os.chdir(filepath)
                 doc = os.path.abspath(filename)
                 os.chdir(filepath)
@@ -32,20 +39,24 @@ class Word2PDF:
                     doc.ExportAsFixedFormat(output, constants.wdExportFormatPDF,
                                     Item=constants.wdExportDocumentWithMarkup,
                                     CreateBookmarks=constants.wdExportCreateHeadingBookmarks)
-                except Exception as e:
-                    print(e)
+                    self.message = str(i+1) + '/' + str(len(self.infn))
+                except:
+                    self.message = '出错了(1): ' + filename + '  转换失败'
+                    return
                 if os.path.isfile(pdf_name):
                     valueList.append(pdf_name)
                 else:
-                    self.message = '转换失败！'
-                    return False
+                    self.message = '出错了(2): ' + filename + '  转换失败'
+                    return
             w.Quit(constants.wdDoNotSaveChanges)
+            self.message = '完成'
             return valueList
-        except TypeError as e:
-            self.message = '出错了！'
-            print(e)
-            return False
+        except:
+            self.message = '出错了, 已停止转换'
+            return
 
-word2pdf = Word2PDF()
-word2pdf.infn = ["G:1.docx"];
-word2pdf.run();
+if __name__=='__main__':
+    w2p = Word2PDF()
+    w2p.infn = ['F:1.docx', 'F:2.doc']
+    w2p.run()
+    print(w2p.message)
