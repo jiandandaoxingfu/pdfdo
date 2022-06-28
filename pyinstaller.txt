@@ -1,4 +1,0 @@
-cd D:
-D:
-cd nodejs/myproject/pdfdo
-pyinstaller -F -w pdf.py
