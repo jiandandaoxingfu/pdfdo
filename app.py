@@ -1,4 +1,5 @@
 import wx, time, re, os
+import webbrowser
 from PDF import PDF
 from word2pdf import Word2PDF
 from threading import Thread
@@ -20,7 +21,8 @@ def split_fn(fn):
 def select_files():
 	if fileDialog.ShowModal() == wx.ID_OK:
 		path = fileDialog.GetDirectory()
-		fn = [ path + '\\' + f for f in fileDialog.GetFilenames() ]
+		fn = fileDialog.GetFilenames()
+		print(fn)
 		split_fn(fn)
 
 def update_state():
@@ -47,7 +49,7 @@ def btn_callback(event):
 	pdfdo.message = ''
 	param_ = wx.FindWindowById(id_ - 1).GetValue()
 	param = []
-	if id_ not in [3, 7, 13, 17]:
+	if id_ not in [3, 7, 13, 17, 19]:
 		try:
 			param = eval(param_)
 		except:
@@ -77,6 +79,8 @@ def btn_callback(event):
 		pdfdo.pdf2image()
 	elif id_ == 17:
 		word2pdf.run()
+	elif id_ == 19:
+		webbrowser.open('https://github.com/jiandandaoxingfu/pdfdo')
 
 def create_gui():
 	# input/button: pos = (left, top), size = (width, height).
@@ -85,7 +89,7 @@ def create_gui():
 	top = 20
 	margin = 40
 	height = 30
-	labels = ['选择文件', '拆分每页', '部分拆分', '文件合并', '文件剪切', '文件旋转', '添加页码', '转为图片', 'Word转PDF']
+	labels = ['选择文件', '拆分每页', '部分拆分', '文件合并', '文件剪切', '文件旋转', '添加页码', '转为图片', 'Word转PDF', '使用说明']
 	default_values = [
 	 '支持拖入文件',
 	 '支持多个文件',
@@ -95,7 +99,8 @@ def create_gui():
 	 '支持单个文件，如：[90,1] (注：旋转度数是90的整数倍, 0/1: 1为测试一张, 0为全部)',
 	 '支持多个文件', 
 	 '支持多个文件, 如: 200, 数值越大，图片越清晰，转换也越慢', 
-	 '支持多个文件(电脑需要安装有 Microsoft Word)'
+	 '支持多个文件(电脑需要安装有 Microsoft Word)',
+	 '状态框'
 	 ]
 	length = len(labels)
 		
@@ -105,8 +110,8 @@ def create_gui():
 		wx.TextCtrl(frm, id = 2 * i, value = default_values[i], pos = (left, top + margin * i), size = (width, height))
 		wx.Button(frm, id = 2 * i + 1, label = labels[i], pos = (width + 20, top + margin * i), size = (100, height)).Bind(wx.EVT_BUTTON, btn_callback)	
 
-	message = wx.TextCtrl(frm, value = "状态框", pos = (left, top + margin * length + 5), size = (555, height))
-	return (fileDialog, message)
+	# message = wx.TextCtrl(frm, value = "状态框", pos = (left, top + margin * length + 5), size = (555, height))
+	return (fileDialog, wx.FindWindowById(length * 2 - 2))
 
 class FileDrop(wx.FileDropTarget):
 
