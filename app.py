@@ -7,8 +7,18 @@ from threading import Thread
 pdfdo = PDF()
 word2pdf = Word2PDF()
 
+scale = 1
+margin = int(10 * scale) # 窗口上下左右, 文本框与文本框, 与按钮之间的空白大小
+textWidth = int(450 * scale) # 文本框大小
+textHeight = int(30 * scale)
+buttonWidth = int(100 * scale) # 按钮大小
+buttonHeight = textHeight
+N = 10 # 控件行数
+windowWidth = textWidth + buttonWidth + margin * 3 + 15 # 窗口大小
+windowHeight = (textHeight + margin) * N + margin + 41 # 71是标题高度
+
 app = wx.App()
-frm = wx.Frame(None, title="pdf处理器", size = (600, 470));
+frm = wx.Frame(None, title="pdf处理器", size = (windowWidth, windowHeight));
 message = False
 
 def split_fn(fn):
@@ -84,11 +94,6 @@ def btn_callback(event):
 
 def create_gui():
 	# input/button: pos = (left, top), size = (width, height).
-	left = 15
-	width = 450
-	top = 20
-	margin = 40
-	height = 30
 	labels = ['选择文件', '拆分每页', '部分拆分', '文件合并', '文件剪切', '文件旋转', '添加页码', '转为图片', 'Word转PDF', '使用说明']
 	default_values = [
 	 '支持拖入文件',
@@ -107,8 +112,9 @@ def create_gui():
 	fileDialog = wx.FileDialog(frm, message = '选择文件', wildcard = '*.pdf;*.doc;*.docx', style = wx.FD_OPEN | wx.FD_MULTIPLE, pos = (200, 30), size = (100, 25))	
 
 	for i in range(length):
-		wx.TextCtrl(frm, id = 2 * i, value = default_values[i], pos = (left, top + margin * i), size = (width, height))
-		wx.Button(frm, id = 2 * i + 1, label = labels[i], pos = (width + 20, top + margin * i), size = (100, height)).Bind(wx.EVT_BUTTON, btn_callback)	
+		top_ = margin + (textHeight + margin) * i
+		wx.TextCtrl(frm, id = 2 * i, value = default_values[i], pos = (margin, top_), size = (textWidth, textHeight))
+		wx.Button(frm, id = 2 * i + 1, label = labels[i], pos = (textWidth + 2 * margin, top_), size = (buttonWidth, buttonHeight)).Bind(wx.EVT_BUTTON, btn_callback)	
 
 	# message = wx.TextCtrl(frm, value = "状态框", pos = (left, top + margin * length + 5), size = (555, height))
 	return (fileDialog, wx.FindWindowById(length * 2 - 2))
@@ -128,10 +134,11 @@ class FileDrop(wx.FileDropTarget):
 drop = FileDrop(wx.FindWindowById(0));
 wx.FindWindowById(0).SetDropTarget(drop);
 
+
+# import wx.lib.inspection
+# wx.lib.inspection.InspectionTool().Show()
+
 frm.Center()
 frm.Show()
 app.MainLoop()
-
-
-
 
