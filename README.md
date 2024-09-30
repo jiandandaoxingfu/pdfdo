@@ -55,6 +55,7 @@
 4. UI：wxpython.
 5. exe文件：pyinstaller.
 
+<!-- pip install wxpython pdf2image pypdf2 pywin32 pyinstaller -->
 
 # 打包方法
 python需要3.6版本
